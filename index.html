@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Browser AI Chat</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1>Offline AI Chat</h1>
+
+    <input id="prompt" placeholder="Ask something..." size="50">
+    <button onclick="runAI()">Send</button>
+
+    <pre id="output">Loading model...</pre>
+
+    <script type="module">
+        import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers';
+
+        const output = document.getElementById('output');
+
+        output.textContent = 'Loading model... (first load may take a minute)';
+
+        const generator = await pipeline(
+            'text-generation',
+            'Xenova/distilgpt2'
+        );
+
+        output.textContent = 'Model loaded!';
+
+        window.runAI = async () => {
+            const prompt = document.getElementById('prompt').value;
+
+            output.textContent = 'Thinking...';
+
+            const result = await generator(prompt, {
+                max_new_tokens: 50
+            });
+
+            output.textContent = result[0].generated_text;
+        };
+    </script>
+</body>
+</html>
