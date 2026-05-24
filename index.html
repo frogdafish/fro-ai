@@ -1,42 +1,85 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Browser AI Chat</title>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline AI Chat</title>
 </head>
 <body>
     <h1>Offline AI Chat</h1>
 
-    <input id="prompt" placeholder="Ask something..." size="50">
-    <button onclick="runAI()">Send</button>
+    <div id="chat"></div>
 
-    <pre id="output">Loading model...</pre>
+    <input id="prompt" type="text" placeholder="Type a message..." size="50">
+    <button id="send">Send</button>
 
     <script type="module">
         import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers';
 
-        const output = document.getElementById('output');
+        const chat = document.getElementById('chat');
+        const promptBox = document.getElementById('prompt');
+        const sendButton = document.getElementById('send');
 
-        output.textContent = 'Loading model... (first load may take a minute)';
+        chat.innerHTML = '<p>Loading AI model...</p>';
 
         const generator = await pipeline(
             'text-generation',
             'Xenova/distilgpt2'
         );
 
-        output.textContent = 'Model loaded!';
+        chat.innerHTML = '<p><b>System:</b> Model loaded.</p>';
 
-        window.runAI = async () => {
-            const prompt = document.getElementById('prompt').value;
+        let history = '';
 
-            output.textContent = 'Thinking...';
+        sendButton.onclick = async () => {
+            const userMessage = promptBox.value.trim();
+            if (!userMessage) return;
 
-            const result = await generator(prompt, {
-                max_new_tokens: 50
-            });
+            chat.innerHTML += `<p><b>You:</b> ${userMessage}</p>`;
+            promptBox.value = '';
 
-            output.textContent = result[0].generated_text;
+            history += `User: ${userMessage}\nAssistant:`;
+
+            try {
+                const result = await generator(history, {
+                    max_new_tokens: 50,
+                    temperature: 0.8,
+                    do_sample: true
+                });
+
+                let generated = result[0].generated_text;
+
+                let reply = generated.substring(history.length);
+
+                const stopTokens = ['User:', '\n\n'];
+                for (const token of stopTokens) {
+                    const index = reply.indexOf(token);
+                    if (index !== -1) {
+                        reply = reply.substring(0, index);
+                    }
+                }
+
+                reply = reply.trim();
+
+                if (!reply) {
+                    reply = "I couldn't generate a response.";
+                }
+
+                chat.innerHTML += `<p><b>AI:</b> ${reply}</p>`;
+
+                history += ` ${reply}\n`;
+
+            } catch (err) {
+                console.error(err);
+                chat.innerHTML += `<p><b>Error:</b> ${err.message}</p>`;
+            }
         };
+
+        promptBox.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                sendButton.click();
+            }
+        });
     </script>
 </body>
 </html>
