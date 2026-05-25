@@ -1,286 +1,758 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Offline AI Chat</title>
-
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Chat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
 <style>
-body{
-    margin:0;
-    font-family:Arial,sans-serif;
-    background:#111827;
-    color:white;
-    height:100vh;
-    display:flex;
-    flex-direction:column;
-}
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-#header{
-    padding:15px;
-    border-bottom:1px solid #333;
-    font-size:20px;
-    font-weight:bold;
-}
+  :root {
+    --bg: #0d0d0f;
+    --surface: #161618;
+    --surface2: #1e1e21;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0efe8;
+    --text-muted: #888784;
+    --text-dim: #4a4946;
+    --accent: #c8b8f8;
+    --accent-glow: rgba(200,184,248,0.12);
+    --accent-dim: #7c6db8;
+    --user-bg: #1e1c2e;
+    --user-border: rgba(200,184,248,0.2);
+    --font-sans: 'DM Sans', sans-serif;
+    --font-serif: 'Instrument Serif', serif;
+    --font-mono: 'DM Mono', monospace;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
 
-#chat{
-    flex:1;
-    overflow-y:auto;
-    padding:20px;
-}
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.65;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
 
-.message{
-    max-width:80%;
-    margin-bottom:15px;
-    padding:12px;
-    border-radius:12px;
-    white-space:pre-wrap;
-    word-wrap:break-word;
-}
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    height: 56px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    background: var(--surface);
+  }
 
-.user{
-    background:#2563eb;
-    margin-left:auto;
-}
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-serif);
+    font-size: 18px;
+    color: var(--accent);
+    letter-spacing: -0.01em;
+  }
 
-.ai{
-    background:#374151;
-}
+  .logo-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
 
-.system{
-    background:#065f46;
-}
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
+  }
 
-#inputArea{
-    display:flex;
-    gap:10px;
-    padding:15px;
-    border-top:1px solid #333;
-}
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
 
-#prompt{
-    flex:1;
-    padding:12px;
-    border:none;
-    border-radius:8px;
-    font-size:16px;
-}
+  .model-badge {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 3px 9px;
+    border-radius: 99px;
+  }
 
-button{
-    padding:12px 18px;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
-    font-size:15px;
-}
+  .clear-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-family: var(--font-sans);
+    padding: 4px 12px;
+    border-radius: 99px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .clear-btn:hover { border-color: var(--border2); color: var(--text); }
+
+  /* ── KEY GATE ── */
+  #key-gate {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .gate-card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    padding: 36px 32px;
+    text-align: center;
+  }
+
+  .gate-icon {
+    font-size: 32px;
+    margin-bottom: 16px;
+  }
+
+  .gate-card h2 {
+    font-family: var(--font-serif);
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .gate-card p {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+    line-height: 1.6;
+  }
+
+  .gate-card p a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .gate-card p a:hover { text-decoration: underline; }
+
+  .key-input-wrap {
+    display: flex;
+    gap: 8px;
+  }
+
+  .key-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .key-input:focus { border-color: var(--accent-dim); }
+  .key-input::placeholder { color: var(--text-dim); }
+
+  .gate-submit {
+    background: var(--accent);
+    color: #1a0f33;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 10px 18px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+  }
+  .gate-submit:hover { opacity: 0.85; }
+
+  .gate-note {
+    margin-top: 14px;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  /* ── CHAT AREA ── */
+  #chat-area {
+    display: none;
+    flex: 1;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 0;
+    scroll-behavior: smooth;
+  }
+
+  #messages::-webkit-scrollbar { width: 4px; }
+  #messages::-webkit-scrollbar-track { background: transparent; }
+  #messages::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+  .msg-row {
+    display: flex;
+    padding: 6px 24px;
+    max-width: 860px;
+    margin: 0 auto;
+    width: 100%;
+    gap: 14px;
+    align-items: flex-start;
+    animation: fade-up 0.25s ease both;
+  }
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg-row.user { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 500;
+    margin-top: 2px;
+  }
+
+  .avatar.ai {
+    background: var(--accent-glow);
+    border: 1px solid var(--user-border);
+    color: var(--accent);
+    font-family: var(--font-mono);
+  }
+
+  .avatar.user {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+  }
+
+  .bubble {
+    max-width: 78%;
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font-size: 14.5px;
+    line-height: 1.7;
+    word-break: break-word;
+  }
+
+  .msg-row.ai .bubble {
+    background: transparent;
+    color: var(--text);
+    border-radius: 2px var(--radius) var(--radius) var(--radius);
+  }
+
+  .msg-row.user .bubble {
+    background: var(--user-bg);
+    border: 1px solid var(--user-border);
+    color: var(--text);
+    border-radius: var(--radius) 2px var(--radius) var(--radius);
+  }
+
+  /* markdown-like rendering */
+  .bubble p { margin: 0 0 0.6em; }
+  .bubble p:last-child { margin-bottom: 0; }
+  .bubble code {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid var(--border);
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: var(--accent);
+  }
+  .bubble pre {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    overflow-x: auto;
+    margin: 10px 0;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+  .bubble pre code { background: none; border: none; padding: 0; color: var(--text); }
+  .bubble ul, .bubble ol { padding-left: 1.4em; margin: 0.4em 0; }
+  .bubble li { margin-bottom: 0.2em; }
+  .bubble strong { font-weight: 500; color: var(--accent); }
+  .bubble h1, .bubble h2, .bubble h3 {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    margin: 0.8em 0 0.3em;
+    color: var(--text);
+  }
+  .bubble h1 { font-size: 20px; }
+  .bubble h2 { font-size: 17px; }
+  .bubble h3 { font-size: 15px; }
+  .bubble hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+  .bubble a { color: var(--accent); }
+
+  /* thinking / streaming cursor */
+  .thinking-dots span {
+    display: inline-block;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent-dim);
+    margin: 0 2px;
+    animation: blink 1.2s ease-in-out infinite;
+  }
+  .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink {
+    0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+    40% { opacity: 1; transform: scale(1); }
+  }
+
+  .stream-cursor {
+    display: inline-block;
+    width: 2px; height: 14px;
+    background: var(--accent);
+    vertical-align: text-bottom;
+    margin-left: 2px;
+    animation: blink-cursor 0.9s step-end infinite;
+  }
+  @keyframes blink-cursor {
+    50% { opacity: 0; }
+  }
+
+  /* ── EMPTY STATE ── */
+  #empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 16px;
+    color: var(--text-dim);
+    user-select: none;
+  }
+
+  .empty-title {
+    font-family: var(--font-serif);
+    font-size: 26px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    max-width: 540px;
+    padding: 0 24px;
+  }
+
+  .suggestion-chip {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 12.5px;
+    padding: 6px 14px;
+    border-radius: 99px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .suggestion-chip:hover { border-color: var(--accent-dim); color: var(--accent); }
+
+  /* ── INPUT BAR ── */
+  #input-bar {
+    padding: 16px 24px 20px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .input-wrap {
+    max-width: 812px;
+    margin: 0 auto;
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 14px;
+    padding: 10px 12px 10px 16px;
+    transition: border-color 0.15s;
+  }
+  .input-wrap:focus-within { border-color: var(--accent-dim); }
+
+  #user-input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 14.5px;
+    line-height: 1.6;
+    resize: none;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+  #user-input::placeholder { color: var(--text-dim); }
+  #user-input::-webkit-scrollbar { width: 3px; }
+  #user-input::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  #send-btn {
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    background: var(--accent);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: opacity 0.15s, transform 0.1s;
+    color: #1a0f33;
+  }
+  #send-btn:hover { opacity: 0.85; }
+  #send-btn:active { transform: scale(0.93); }
+  #send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  #send-btn svg { width: 16px; height: 16px; }
+
+  .input-hint {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 8px;
+    max-width: 812px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .error-msg {
+    color: #f09595;
+    font-size: 13px;
+    font-family: var(--font-mono);
+    padding: 10px 16px;
+    background: rgba(226,75,74,0.1);
+    border: 1px solid rgba(226,75,74,0.25);
+    border-radius: var(--radius-sm);
+    margin: 6px 24px;
+    max-width: 812px;
+    margin-left: auto;
+    margin-right: auto;
+  }
 </style>
 </head>
 <body>
 
-<div id="header">Offline AI Chat</div>
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    AI Chat
+  </div>
+  <div class="header-right">
+    <span class="model-badge">claude-sonnet-4</span>
+    <button class="clear-btn" id="clear-btn" style="display:none">clear</button>
+  </div>
+</header>
 
-<div id="chat"></div>
-
-<div id="inputArea">
-    <input
-        id="prompt"
-        type="text"
-        placeholder="Message AI..."
-        autocomplete="off"
-    >
-    <button id="send">Send</button>
-    <button id="continue">Continue</button>
+<!-- API Key Gate -->
+<div id="key-gate">
+  <div class="gate-card">
+    <div class="gate-icon">🔑</div>
+    <h2>Enter your API key</h2>
+    <p>Your key is stored only in memory and never sent anywhere except the Anthropic API.<br>
+    <a href="https://console.anthropic.com/settings/keys" target="_blank">Get a key from console.anthropic.com →</a></p>
+    <div class="key-input-wrap">
+      <input type="password" class="key-input" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off" />
+      <button class="gate-submit" id="key-submit">Start</button>
+    </div>
+    <p class="gate-note">Key is never saved to disk, localStorage, or any server.</p>
+  </div>
 </div>
 
-<script type="module">
-import * as webllm from "https://esm.run/@mlc-ai/web-llm";
+<!-- Main Chat -->
+<div id="chat-area">
+  <div id="messages">
+    <div id="empty-state">
+      <div class="empty-title">What's on your mind?</div>
+      <div class="suggestions">
+        <div class="suggestion-chip">Explain quantum entanglement simply</div>
+        <div class="suggestion-chip">Write a Python web scraper</div>
+        <div class="suggestion-chip">Give me 5 startup ideas for 2025</div>
+        <div class="suggestion-chip">Debug my code</div>
+        <div class="suggestion-chip">Summarize a topic for me</div>
+      </div>
+    </div>
+  </div>
 
-const chat = document.getElementById("chat");
-const promptBox = document.getElementById("prompt");
-const sendBtn = document.getElementById("send");
-const continueBtn = document.getElementById("continue");
+  <div id="input-bar">
+    <div class="input-wrap">
+      <textarea id="user-input" rows="1" placeholder="Message AI…" maxlength="8000"></textarea>
+      <button id="send-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 19V5M5 12l7-7 7 7"/>
+        </svg>
+      </button>
+    </div>
+    <div class="input-hint">Claude Sonnet · streaming · key stays in memory only</div>
+  </div>
+</div>
 
-function addMessage(text,type){
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────
+let apiKey = '';
+let history = [];
+let streaming = false;
 
-    const div=document.createElement("div");
+const SYSTEM = `You are a helpful, knowledgeable AI assistant. You give clear, accurate, and thoughtful answers. Use markdown formatting where it improves readability (code blocks for code, bullet lists for lists, etc.). Be concise but complete.`;
 
-    div.className=`message ${type}`;
+// ── ELEMENTS ───────────────────────────────────────────────────────────────
+const keyGate    = document.getElementById('key-gate');
+const chatArea   = document.getElementById('chat-area');
+const keyInput   = document.getElementById('api-key-input');
+const keySubmit  = document.getElementById('key-submit');
+const messages   = document.getElementById('messages');
+const emptyState = document.getElementById('empty-state');
+const userInput  = document.getElementById('user-input');
+const sendBtn    = document.getElementById('send-btn');
+const clearBtn   = document.getElementById('clear-btn');
 
-    div.textContent=text;
-
-    chat.appendChild(div);
-
-    chat.scrollTop=chat.scrollHeight;
-
-    return div;
+// ── KEY GATE ───────────────────────────────────────────────────────────────
+function startChat() {
+  const key = keyInput.value.trim();
+  if (!key.startsWith('sk-')) {
+    keyInput.style.borderColor = '#f09595';
+    setTimeout(() => keyInput.style.borderColor = '', 1000);
+    return;
+  }
+  apiKey = key;
+  keyGate.style.display = 'none';
+  chatArea.style.display = 'flex';
+  clearBtn.style.display = '';
+  userInput.focus();
 }
 
-let engine=null;
+keySubmit.addEventListener('click', startChat);
+keyInput.addEventListener('keydown', e => { if (e.key === 'Enter') startChat(); });
 
-addMessage("Loading AI...","system");
+// ── SUGGESTIONS ────────────────────────────────────────────────────────────
+document.querySelectorAll('.suggestion-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    userInput.value = chip.textContent;
+    autoResize();
+    sendMessage();
+  });
+});
 
-const models=[
-    "Llama-3.2-1B-Instruct-q4f16_1-MLC",
-    "Qwen2.5-0.5B-Instruct-q4f16_1-MLC"
-];
+// ── AUTO RESIZE TEXTAREA ──────────────────────────────────────────────────
+function autoResize() {
+  userInput.style.height = 'auto';
+  userInput.style.height = Math.min(userInput.scrollHeight, 160) + 'px';
+}
+userInput.addEventListener('input', autoResize);
 
-for(const model of models){
+userInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
 
-    try{
+sendBtn.addEventListener('click', sendMessage);
+clearBtn.addEventListener('click', clearChat);
 
-        addMessage(`Trying ${model}`,"system");
-
-        engine=new webllm.MLCEngine();
-
-        await engine.reload(model);
-
-        addMessage(`Loaded ${model}`,"system");
-
-        break;
-
-    }catch(err){
-
-        console.error(err);
-
-        addMessage(`${model} failed`,"system");
-    }
+// ── MARKDOWN RENDERER (lightweight) ───────────────────────────────────────
+function renderMarkdown(text) {
+  let html = text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/```(\w+)?\n?([\s\S]*?)```/g, (_, lang, code) =>
+      `<pre><code>${code.trim()}</code></pre>`)
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+    .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+    .replace(/^---$/gm, '<hr>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .split('\n\n').map(p => {
+      if (/^<(h[123]|pre|ul|ol|li|hr)/.test(p.trim())) return p;
+      return `<p>${p.replace(/\n/g, '<br>')}</p>`;
+    }).join('\n');
+  return html;
 }
 
-if(!engine){
+// ── ADD MESSAGE ROW ────────────────────────────────────────────────────────
+function addMessage(role, content) {
+  if (emptyState.parentNode) emptyState.remove();
 
-    addMessage(
-        "No compatible AI model could be loaded.",
-        "system"
-    );
+  const row = document.createElement('div');
+  row.className = `msg-row ${role}`;
+
+  const avatar = document.createElement('div');
+  avatar.className = `avatar ${role}`;
+  avatar.textContent = role === 'ai' ? 'AI' : 'you';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+
+  if (role === 'ai' && content === null) {
+    bubble.innerHTML = '<div class="thinking-dots"><span></span><span></span><span></span></div>';
+  } else if (role === 'ai') {
+    bubble.innerHTML = renderMarkdown(content);
+  } else {
+    bubble.innerHTML = `<p>${content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</p>`;
+  }
+
+  row.appendChild(avatar);
+  row.appendChild(bubble);
+  messages.appendChild(row);
+  messages.scrollTop = messages.scrollHeight;
+
+  return { row, bubble };
 }
 
-const messages=[
-{
-    role:"system",
-    content:
-`You are a helpful AI assistant.
+// ── SEND MESSAGE ────────────────────────────────────────────────────────────
+async function sendMessage() {
+  const text = userInput.value.trim();
+  if (!text || streaming) return;
 
-Give detailed answers when appropriate.
+  // Add user message
+  addMessage('user', text);
+  history.push({ role: 'user', content: text });
+  userInput.value = '';
+  autoResize();
 
-Finish your thoughts completely.
+  // Show thinking indicator
+  const { bubble: aiBubble, row: aiRow } = addMessage('ai', null);
+  streaming = true;
+  sendBtn.disabled = true;
 
-Do not abruptly stop in the middle of an explanation.
+  // Remove any previous errors
+  document.querySelectorAll('.error-msg').forEach(e => e.remove());
 
-If the user asks for code, provide complete code.
-
-If the user asks for instructions, provide all steps clearly.`
-}
-];
-
-async function generateResponse(){
-
-    try{
-
-        const response=
-            await engine.chat.completions.create({
-                messages,
-                temperature:0.7,
-                top_p:0.95,
-                max_tokens:1024
-            });
-
-        return response
-            .choices[0]
-            .message
-            .content;
-
-    }catch(err){
-
-        console.error(err);
-
-        throw err;
-    }
-}
-
-async function sendMessage(){
-
-    if(!engine) return;
-
-    const text=promptBox.value.trim();
-
-    if(!text) return;
-
-    addMessage(text,"user");
-
-    promptBox.value="";
-
-    messages.push({
-        role:"user",
-        content:text
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2048,
+        system: SYSTEM,
+        stream: true,
+        messages: history
+      })
     });
 
-    const thinking=
-        addMessage("Thinking...","ai");
-
-    try{
-
-        const reply=
-            await generateResponse();
-
-        thinking.textContent=reply;
-
-        messages.push({
-            role:"assistant",
-            content:reply
-        });
-
-    }catch(err){
-
-        thinking.textContent=
-            "Error: "+err.message;
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.error?.message || `HTTP ${res.status}`);
     }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let accumulated = '';
+    aiBubble.innerHTML = '<span class="stream-cursor"></span>';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n');
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (data === '[DONE]') continue;
+        try {
+          const evt = JSON.parse(data);
+          if (evt.type === 'content_block_delta' && evt.delta?.text) {
+            accumulated += evt.delta.text;
+            aiBubble.innerHTML = renderMarkdown(accumulated) + '<span class="stream-cursor"></span>';
+            messages.scrollTop = messages.scrollHeight;
+          }
+        } catch {}
+      }
+    }
+
+    // Finalize
+    aiBubble.innerHTML = renderMarkdown(accumulated);
+    history.push({ role: 'assistant', content: accumulated });
+
+  } catch (err) {
+    aiRow.remove();
+    const errDiv = document.createElement('div');
+    errDiv.className = 'error-msg';
+    errDiv.textContent = '⚠ ' + err.message;
+    messages.appendChild(errDiv);
+    messages.scrollTop = messages.scrollHeight;
+    // Roll back user message from history
+    history.pop();
+  }
+
+  streaming = false;
+  sendBtn.disabled = false;
+  userInput.focus();
 }
 
-async function continueResponse(){
-
-    if(!engine) return;
-
-    messages.push({
-        role:"user",
-        content:
-        "Continue your previous response from where you left off."
+// ── CLEAR ──────────────────────────────────────────────────────────────────
+function clearChat() {
+  history = [];
+  messages.innerHTML = '';
+  const empty = document.createElement('div');
+  empty.id = 'empty-state';
+  empty.innerHTML = `
+    <div class="empty-title">What's on your mind?</div>
+    <div class="suggestions">
+      <div class="suggestion-chip">Explain quantum entanglement simply</div>
+      <div class="suggestion-chip">Write a Python web scraper</div>
+      <div class="suggestion-chip">Give me 5 startup ideas for 2025</div>
+      <div class="suggestion-chip">Debug my code</div>
+      <div class="suggestion-chip">Summarize a topic for me</div>
+    </div>`;
+  messages.appendChild(empty);
+  document.querySelectorAll('.suggestion-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      userInput.value = chip.textContent;
+      autoResize();
+      sendMessage();
     });
-
-    const thinking=
-        addMessage("Continuing...","ai");
-
-    try{
-
-        const reply=
-            await generateResponse();
-
-        thinking.textContent=reply;
-
-        messages.push({
-            role:"assistant",
-            content:reply
-        });
-
-    }catch(err){
-
-        thinking.textContent=
-            "Error: "+err.message;
-    }
+  });
 }
-
-sendBtn.onclick=sendMessage;
-
-continueBtn.onclick=continueResponse;
-
-promptBox.addEventListener(
-    "keydown",
-    e=>{
-        if(e.key==="Enter"){
-            sendMessage();
-        }
-    }
-);
 </script>
-
 </body>
 </html>
